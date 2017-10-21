@@ -1,0 +1,112 @@
+<html>
+
+
+<head>
+	<meta charset='utf-8'/>
+	<title>WebGL Example</title>
+
+	<script>
+
+		var main = function() {
+			// create html canvas
+			var html_canvas = document.getElementById('my_canvas');
+			html_canvas.width = window.innerWidth;
+			html_canvas.height = window.innerHeight;
+
+			// GL context
+			var GL = html_canvas.getContext('webgl');
+
+			// source code for vertex shader
+			var shader_vertex_source="\
+			attribute vec2 position;\
+			attribute vec3 colour;\
+			varying vec3 vColour;\
+			void main(void) {\
+    			gl_Position = vec4(position, 0.0, 1.0);\
+    			vColour = colour;\
+			}";
+
+			// source code for fragment shader
+			var shader_fragment_source="\
+			precision mediump float;\
+			varying vec3 vColour;\
+			void main(void) {\
+				gl_FragColor = vec4(vColour, 1.);\
+			}";
+
+			// create vertex shader
+			var shader_vertex = GL.createShader(GL.VERTEX_SHADER);
+			GL.shaderSource(shader_vertex, shader_vertex_source);
+			GL.compileShader(shader_vertex);
+
+			// create fragment shader
+			var shader_fragment = GL.createShader(GL.FRAGMENT_SHADER);
+			GL.shaderSource(shader_fragment, shader_fragment_source);
+			GL.compileShader(shader_fragment);
+
+			// create program, attach shaders
+			var shader_program = GL.createProgram();
+			GL.attachShader(shader_program, shader_vertex);
+			GL.attachShader(shader_program, shader_fragment);
+
+			// connect javascript and GLSL variables
+			GL.linkProgram(shader_program);
+			var js_position = GL.getAttribLocation(shader_program, "position");
+			var js_colour = GL.getAttribLocation(shader_program, "colour")
+			GL.enableVertexAttribArray(js_colour);
+			GL.enableVertexAttribArray(js_position);
+			GL.useProgram(shader_program);
+
+			// data for triangle, javascript array
+			var triangle_vertex_data_js = [
+			-1, -1,
+			0, 0, 1,
+			1, -1,
+			1, 1, 0,
+			0, 1,
+			1, 0, 0];
+			// build webgl vertex array
+			var triangle_vertex_data_gl = GL.createBuffer();
+			GL.bindBuffer(GL.ARRAY_BUFFER, triangle_vertex_data_gl);
+			GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(triangle_vertex_data_js), GL.STATIC_DRAW);
+
+			// triangle faces
+			var triangle_faces_js = [0, 1, 2];
+			var triangle_faces_gl = GL.createBuffer();
+			GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, triangle_faces_gl);
+			GL.bufferData(GL.ELEMENT_ARRAY_BUFFER, new Uint16Array(triangle_faces_js), GL.STATIC_DRAW);
+
+			// draw the scene
+			GL.clearColor(0.0, 0.0, 0.0, 0.0);
+			var do_drawing = function() {
+				GL.viewport(0.0, 0.0, html_canvas.width, html_canvas.height);
+				GL.clear(GL.COLOR_BUFFER_BIT);
+
+				GL.bindBuffer(GL.ARRAY_BUFFER, triangle_vertex_data_gl);
+				GL.vertexAttribPointer(js_position, 2, GL.FLOAT, false,4*(2+3),0) ;
+    			GL.vertexAttribPointer(js_colour, 3, GL.FLOAT, false,4*(2+3),2*4) ;
+				GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, triangle_faces_gl);
+				GL.drawElements(GL.TRIANGLES, 3, GL.UNSIGNED_SHORT, 0);
+
+				GL.flush();
+				window.requestAnimationFrame(do_drawing);
+			};
+			do_drawing();
+
+
+		};
+
+	</script>
+
+</head>
+
+
+<body onload='main()'>
+
+<canvas id='my_canvas' style='background-color: pink;'>
+</canvas>
+
+</body>
+
+
+</html>
